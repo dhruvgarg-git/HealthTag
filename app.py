@@ -187,6 +187,34 @@ CREATE TABLE IF NOT EXISTS messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT, profile_id TEXT,
     kind TEXT, to_label TEXT, body TEXT, link TEXT
 );
+CREATE TABLE IF NOT EXISTS notifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    recipient_type TEXT NOT NULL CHECK (recipient_type IN ('patient', 'professional')),
+    recipient_id TEXT NOT NULL,
+    profile_id TEXT,
+    title TEXT NOT NULL,
+    body TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    push_status TEXT NOT NULL DEFAULT 'not_queued'
+        CHECK (push_status IN ('not_queued', 'queued', 'accepted', 'failed', 'unavailable')),
+    push_submitted_at TEXT,
+    read_at TEXT
+);
+CREATE INDEX IF NOT EXISTS notifications_recipient
+    ON notifications (recipient_type, recipient_id, id DESC);
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    recipient_type TEXT NOT NULL CHECK (recipient_type IN ('patient', 'professional')),
+    recipient_id TEXT NOT NULL,
+    endpoint TEXT NOT NULL UNIQUE,
+    p256dh TEXT NOT NULL,
+    auth TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    disabled_at TEXT
+);
+CREATE INDEX IF NOT EXISTS push_subscriptions_recipient
+    ON push_subscriptions (recipient_type, recipient_id, disabled_at);
 CREATE TABLE IF NOT EXISTS requests (
     id TEXT PRIMARY KEY, profile_id TEXT, ts TEXT, status TEXT, otp TEXT,
     attempts INTEGER DEFAULT 0, requester_cred TEXT, requester_name TEXT, requester_org TEXT,
