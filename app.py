@@ -905,6 +905,34 @@ def owner(pid):
     records = [dict(r, note=dec(r["note"])) for r in records]
     return render_template("owner.html", p=p, events=events, notes=notes, records=records)
 
+@app.post("/owner/<pid>/delete")
+def owner_delete(pid):
+    owner_profile(pid)                                   # only the signed-in owner passes
+    if request.form.get("confirm", "").strip() != "DELETE":
+        flash("Type DELETE to confirm.")
+        return redirect(url_for("owner_edit", pid=pid))
+    c = db()
+    for sql in (
+        "DELETE FROM records WHERE profile_id=?",
+        "DELETE FROM events WHERE profile_id=?",
+        "DELETE FROM messages WHERE profile_id=?",
+        "DELETE FROM requests WHERE profile_id=?",
+        "DELETE FROM notifications WHERE profile_id=? OR (recipient_type='patient' AND recipient_id=?)",
+        "DELETE FROM push_subscriptions WHERE recipient_type='patient' AND recipient_id=?",
+        "DELETE FROM owner_logins WHERE pid=?",
+        "DELETE FROM profiles WHERE id=?",
+    ):
+        try:
+            c.execute(sql, (pid,) * sql.count("?"))
+        except sqlite3.OperationalError:
+            pass                                         # owner_logins may not exist
+    c.commit()
+    owned = dict(session.get("owner", {}))
+    owned.pop(pid, None)
+    session["owner"] = owned
+    flash("Your HealthTag and its data were deleted.")
+    return redirect(url_for("home"))
+
 
 @app.route("/owner/<pid>/edit", methods=["GET", "POST"])
 def owner_edit(pid):
