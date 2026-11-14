@@ -855,6 +855,9 @@ def register():
                 "VALUES (?,?,?," + ",".join("?" * len(TEXT_FIELDS)) + ")",
                 (pid, sha256_hex(key), iso(), *[enc(form[f]) for f in TEXT_FIELDS]))
             db().commit()
+            send_sms(form["contact_phone"],
+                     f"HealthTag: {form['name']} added you as their emergency contact. "
+                     "If this is a mistake, please ignore this message.")
             log_event(pid, 0, "Owner", "created this HealthTag")
             grant_owner(pid, sha256_hex(key))
             session["reveal"] = {"pid": pid, "k": key}      # shown once on the card page, then dropped
