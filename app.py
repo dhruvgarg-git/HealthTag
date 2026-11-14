@@ -811,7 +811,16 @@ def service_worker():
     response.headers["Cache-Control"] = "no-cache"
     return response
 
-
+def clean_indian_mobile(raw):
+    digits = re.sub(r"\D", "", raw or "")
+    if len(digits) == 12 and digits.startswith("91"):
+        digits = digits[2:]
+    elif len(digits) == 11 and digits.startswith("0"):
+        digits = digits[1:]
+    if re.fullmatch(r"[6-9]\d{9}", digits):
+        return "+91" + digits
+    return None
+  
 def read_profile_form():
     limits = {"history": 2000}
     data = {f: request.form.get(f, "").strip()[:limits.get(f, 300)] for f in TEXT_FIELDS}
@@ -822,9 +831,10 @@ def read_profile_form():
         errors.append("Choose a blood group, or 'Not sure'.")
     if not data["contact_name"]:
         errors.append("Enter the emergency contact's name.")
-    phone = re.sub(r"[^\d+]", "", data["contact_phone"])
-    if len(re.sub(r"\D", "", phone)) < 10:
-        errors.append("Enter a valid emergency contact phone number (at least 10 digits).")
+        phone = clean_indian_mobile(data["contact_phone"])
+    if not phone:
+        errors.append("Enter a valid 10-digit Indian mobile number (starts with 6, 7, 8 or 9).")
+    phone = data["contact_phone"]      # keep what they typed so the form refills
     data["contact_phone"] = phone
     return data, errors
 
@@ -1164,6 +1174,10 @@ def inbox_clear():
 
 
 # --------------------------------------------------------------------------- errors
+@app.errorhandler(CSRFError)
+def csrf_failed(_e):
+    return render_template("error.html", title="Session expired",
+                           text="Please go back, refresh the page and try again."), 400
 @app.errorhandler(403)
 def forbidden(_e):
     return render_template("error.html", title="Access denied",
