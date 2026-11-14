@@ -811,6 +811,10 @@ def service_worker():
     response.headers["Cache-Control"] = "no-cache"
     return response
 
+@app.get("/privacy")
+def privacy():
+    return render_template("privacy.html")
+  
 def clean_indian_mobile(raw):
     digits = re.sub(r"\D", "", raw or "")
     if len(digits) == 12 and digits.startswith("91"):
