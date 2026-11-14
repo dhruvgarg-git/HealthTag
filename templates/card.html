@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Your HealthTag — {{ p.name }}{% endblock %}
+
+{% block content %}
+<div class="card-page-header no-print">
+  <h1>Your HealthTag is ready</h1>
+  <p class="muted">Print this card, keep it in your wallet, or use it as a lock-screen emergency badge. Anyone can scan it, but access to sensitive details requires your authorization.</p>
+</div>
+
+<!-- Physical ID Card Preview -->
+<div class="id-card">
+  <img src="{{ url_for('qr_image', pid=p.id) }}" alt="QR code for {{ p.name }}">
+  <div class="id-card-details">
+    <p class="tag">HealthTag · scan in an emergency</p>
+    <h2>{{ p.name }}</h2>
+    <p class="fine" style="margin: 0;">Code: <strong>{{ p.id }}</strong></p>
+  </div>
+</div>
+
+<!-- Primary Action Bar -->
+<div class="actions no-print" style="margin-top: 1.5rem; display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+  <button class="btn" onclick="window.print()" type="button">
+    🖨️ Print Card
+  </button>
+  <a class="btn teal" href="{{ url_for('owner', pid=p.id, k=k) }}">
+    ⚙️ Open Dashboard
+  </a>
+  <a class="btn" 
+     href="{{ url_for('qr_png', pid=p.id, download=1) }}" 
+     download="HealthTag_{{ p.id }}.png">
+    ⬇️ Download PNG Badge
+  </a>
+  <button class="btn" 
+          type="button" 
+          id="copyBtn" 
+          data-url="{{ url_for('qr_png', pid=p.id, _external=True) }}"
+          onclick="copyWidgetLink(this.dataset.url)">
+    🔗 Copy Widget URL
+  </button>
+</div>
+
+<!-- Private Dashboard Access Link -->
+<div class="panel locked no-print" style="margin-top: 2rem;">
+  <h3>Save your private owner key</h3>
+  <p class="fine">This link opens your management dashboard where you can update emergency contacts, medical records, and view scan logs. Do not share this URL publicly.</p>
+  <code style="word-break: break-all; font-size: 0.85rem; display: block; padding: 0.5rem; background: rgba(0,0,0,0.04); border-radius: 4px; margin-top: 0.5rem;">
+    {{ url_for('owner', pid=p.id, k=k, _external=True) }}
+  </code>
+</div>
+
+<script>
+function copyWidgetLink(url) {
+  var btn = document.getElementById('copyBtn');
+  function done() {
+    var original = btn.innerHTML;
+    btn.innerHTML = '\u2713 Copied!';
+    btn.classList.add('teal');
+    setTimeout(function () { btn.innerHTML = original; btn.classList.remove('teal'); }, 2000);
+  }
+  // Works over plain http (e.g. a LAN IP), where navigator.clipboard is unavailable
+  function fallback() {
+    var ta = document.createElement('textarea');
+    ta.value = url;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    ta.setSelectionRange(0, url.length);
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+    if (ok) { done(); } else { window.prompt('Copy your widget image URL:', url); }
+  }
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(url).then(done).catch(fallback);
+  } else {
+    fallback();
+  }
+}
+</script>
+{% endblock %}
