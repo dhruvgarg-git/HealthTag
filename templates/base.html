@@ -35,5 +35,15 @@
   Prototype built by Team Schrodinger's for Vivaan-X. Text messages and approval links are sent to the emergency contact.
   {% if ENCRYPTED %}Medical fields are encrypted in the database.{% else %}Encryption library not installed, so data is stored as plain text.{% endif %}
 </footer>
+<script>
+  // Register the HealthTag push worker without requesting notification permission.
+  // Permission will be requested only after the user explicitly enables notifications.
+  if ("serviceWorker" in navigator && window.isSecureContext) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("{{ url_for('static', filename='sw.js') }}")
+        .catch((error) => console.warn("HealthTag service worker registration failed:", error));
+    });
+  }
+</script>
 </body>
 </html>
