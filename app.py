@@ -467,8 +467,26 @@ def send_message(pid, kind, to_label, body, link="", phone="", inbox_body=None):
     db().commit()
 
 
+def create_notification(recipient_type, recipient_id, title, body, profile_id=None):
+    """Persist a notification for an authenticated patient or professional."""
+    if recipient_type not in ("patient", "professional"):
+        raise ValueError("Unsupported notification recipient type")
+    db().execute(
+        "INSERT INTO notifications "
+        "(recipient_type, recipient_id, profile_id, title, body, created_at) "
+        "VALUES (?,?,?,?,?,?)",
+        (recipient_type, recipient_id, profile_id, title[:120], body[:500], iso()))
+    db().commit()
+
+
 def notify_owner(pid, body):
+    create_notification("patient", pid, "HealthTag account activity", body, profile_id=pid)
+    # Keep the legacy activity feed populated during the transition.
     send_message(pid, "owner", "Owner (HealthTag app)", body)
+
+
+def notify_professional(cred, title, body, profile_id=None):
+    create_notification("professional", cred, title, body, profile_id=profile_id)
 
 
 def current_pro():
@@ -1000,6 +1018,44 @@ def pro_login():
 def pro_logout():
     session.pop("pro", None)
     return redirect(safe_next(request.args.get("next", "")))
+
+
+# --------------------------------------------------------------------------- notifications centre
+def _notification_identity():
+    pro = current_pro()
+    if pro:
+        return "professional", pro["cred"], None
+    pid = request.args.get("pid", "").strip()
+    if not pid:
+        abort(403)
+    owner_profile(pid)
+    return "patient", pid, pid
+
+
+@app.route("/notifications")
+def notifications():
+    recipient_type, recipient_id, pid = _notification_identity()
+    rows = db().execute(
+        "SELECT * FROM notifications WHERE recipient_type=? AND recipient_id=? "
+        "ORDER BY id DESC LIMIT 100",
+        (recipient_type, recipient_id)).fetchall()
+    unread = db().execute(
+        "SELECT COUNT(*) FROM notifications WHERE recipient_type=? AND recipient_id=? AND read_at IS NULL",
+        (recipient_type, recipient_id)).fetchone()[0]
+    return render_template("notifications.html", notifications=rows, unread=unread,
+                           recipient_type=recipient_type, pid=pid)
+
+
+@app.post("/notifications/read-all")
+def notifications_read_all():
+    recipient_type, recipient_id, _pid = _notification_identity()
+    db().execute(
+        "UPDATE notifications SET read_at=? WHERE recipient_type=? AND recipient_id=? AND read_at IS NULL",
+        (iso(), recipient_type, recipient_id))
+    db().commit()
+    if recipient_type == "professional":
+        return redirect(url_for("notifications"))
+    return redirect(url_for("notifications", pid=recipient_id))
 
 
 # --------------------------------------------------------------------------- demo inbox
