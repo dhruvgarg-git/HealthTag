@@ -50,4 +50,16 @@
   
   <button class="btn coral block" type="submit">{{ 'Save changes' if editing else 'Create my HealthTag' }}</button>
 </form>
+{% if editing %}
+<section class="panel">
+  <h2>Delete this HealthTag</h2>
+  <p class="muted">This permanently deletes your details, notes and activity log.</p>
+  <form method="post" action="{{ url_for('owner_delete', pid=p.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="row"><label for="confirm">Type DELETE to confirm</label>
+      <input id="confirm" name="confirm" autocomplete="off" required></div>
+    <button class="btn coral" type="submit">Delete permanently</button>
+  </form>
+</section>
+{% endif %}
 {% endblock %}
