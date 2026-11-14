@@ -865,6 +865,7 @@ def register():
                      f"HealthTag: {form['name']} added you as their emergency contact. "
                      "If this is a mistake, please ignore this message.")
             log_event(pid, 0, "Owner", "created this HealthTag")
+            notify_owner(pid, f"Your HealthTag was created. {form['contact_name']} is your emergency contact.")
             grant_owner(pid, sha256_hex(key))
             session["reveal"] = {"pid": pid, "k": key}      # shown once on the card page, then dropped
             return redirect(url_for("card", pid=pid))
