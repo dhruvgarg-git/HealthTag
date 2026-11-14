@@ -40,6 +40,7 @@
 <footer class="foot">
   Prototype built by Team Schrodinger's for Vivaan-X. Text messages and approval links are sent to the emergency contact.
   {% if ENCRYPTED %}Medical fields are encrypted in the database.{% else %}Encryption library not installed, so data is stored as plain text.{% endif %}
+<a href="{{ url_for('privacy') }}">Privacy</a>
 </footer>
 <script>
   // Register the HealthTag push worker without requesting notification permission.
