@@ -66,7 +66,7 @@ OWNER_KEY_MAX_PER_IP = 10     # wrong owner keys per IP in 15 min
 FAST2SMS_API_KEY = os.environ.get("FAST2SMS_API_KEY", "")
 FAST2SMS_URL = "https://www.fast2sms.com/dev/bulkV2"
 FAST2SMS_ROUTE = os.environ.get("FAST2SMS_ROUTE", "q")   # q = Quick SMS, no DLT
-SMS_ENABLED = bool(FAST2SMS_API_KEY)
+SMS_ENABLED = os.environ.get("HEALTHTAG_ENABLE_SMS", "0") == "1" and bool(FAST2SMS_API_KEY)
 
 BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-", "Not sure"]
 TEXT_FIELDS = ["name", "age", "blood_group", "allergies", "conditions", "medications",
@@ -433,7 +433,7 @@ def log_once(pid, tier, actor, action, detail="", minutes=5):
 def send_sms(phone, text):
     """Send a real SMS through Fast2SMS. Returns (ok, info). Never raises."""
     if not SMS_ENABLED:
-        return False, "SMS off (no FAST2SMS_API_KEY)"
+        return False, "SMS disabled (set HEALTHTAG_ENABLE_SMS=1 to enable)"
     number = re.sub(r"\D", "", phone or "")[-10:]      # +919800000001 -> 9800000001
     if len(number) != 10:
         return False, "invalid phone number"
@@ -521,7 +521,7 @@ def _save_push_subscription(recipient_type, recipient_id):
         "INSERT INTO push_subscriptions "
         "(recipient_type, recipient_id, endpoint, endpoint_hash, p256dh, auth, created_at, updated_at, disabled_at) "
         "VALUES (?,?,?,?,?,?,?,?,NULL) "
-        "ON CONFLICT(endpoint) DO UPDATE SET recipient_type=excluded.recipient_type, "
+        "ON CONFLICT(endpoint_hash) DO UPDATE SET recipient_type=excluded.recipient_type, "
         "recipient_id=excluded.recipient_id, endpoint=excluded.endpoint, endpoint_hash=excluded.endpoint_hash, "
         "p256dh=excluded.p256dh, auth=excluded.auth, updated_at=excluded.updated_at, disabled_at=NULL",
         (recipient_type, recipient_id, enc(endpoint), endpoint_hash, enc(p256dh), enc(auth), now, now))
