@@ -5,6 +5,7 @@
 <p class="muted">Anyone who scans your code sees only your emergency contact. Blood group, allergies, conditions and medications go to verified doctors and paramedics. Your history opens only when your emergency contact approves.</p>
 
 <form method="post" class="panel">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   {% if editing %}<input type="hidden" name="k" value="{{ k }}">{% endif %}
   <div class="two">
     <div class="row"><label for="name">Full name</label>
