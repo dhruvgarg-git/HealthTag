@@ -844,6 +844,8 @@ def register():
     form = {f: "" for f in TEXT_FIELDS}
     if request.method == "POST":
         form, errors = read_profile_form()
+        if not request.form.get("consent"):
+            errors.append("Please tick the consent box.")
         if errors:
             for e in errors:
                 flash(e)
