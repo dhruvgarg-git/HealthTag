@@ -1,7 +1,5 @@
 
-# HealthTag — Emergency Medical Access Prototype
-
-**Team Schrodinger's | Vivaan X 2026**
+#  HealthTag prototype (Team Schrodinger's, Vivaan X 2026) - Emergency Medical Access Prototype
 
 HealthTag is a QR-based emergency health identity system that provides controlled access to medical information during emergencies. Bystanders can view emergency contact details, verified doctors and paramedics can access an emergency medical card, and full medical history becomes available after the emergency contact approves access.
 
