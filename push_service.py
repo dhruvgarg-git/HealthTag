@@ -9,7 +9,7 @@ import os
 from pywebpush import WebPushException, webpush
 
 
-def send_generic_push(subscription_info):
+def send_generic_push(subscription_info, notification_path="/notifications"):
     """Submit a generic notification to one browser subscription.
 
     Returns one of: "accepted", "unavailable", or "failed".
@@ -26,7 +26,7 @@ def send_generic_push(subscription_info):
     payload = {
         "title": "HealthTag notification",
         "body": "You have a new account update. Open HealthTag to view it.",
-        "path": "/notifications",
+        "path": notification_path if isinstance(notification_path, str) and notification_path.startswith("/notifications") and not notification_path.startswith("//") else "/notifications",
         "tag": "healthtag-account-update",
     }
 
