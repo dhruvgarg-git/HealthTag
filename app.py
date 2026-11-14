@@ -1,5 +1,5 @@
 """
-HealthTag prototype - Team Schrodinger's, Vivaan X 2026
+HealthTag prototype - Team Schrodinger's, Vivaan-X 2026
 A working demo of the three-tier emergency access flow:
   Tier 0  anyone scanning the QR      -> "call 108" + emergency contact number only
   Tier 1  verified doctor/paramedic   -> emergency card, instantly, logged against their credential
