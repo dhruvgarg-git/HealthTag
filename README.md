@@ -32,7 +32,7 @@ Every access event is recorded in an activity log, and the owner receives a noti
 
 HealthTag is hosted on Render, so you can access the deployed application without installing Python or running a local server.
 
-**Live application:** [HealthTag on Render] <healthtag.onrender.com>
+**Live application:** [HealthTag on Render] <[HealthTag](https://healthtag.onrender.com/)>
 
 1. Open the deployed HealthTag application.
 2. Create a HealthTag or open an existing QR code.
