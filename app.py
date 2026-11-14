@@ -37,6 +37,7 @@ from flask import (Flask, Response, abort, flash, g, jsonify, redirect,
                    render_template, request, send_file, session, url_for)
 import qrcode
 import qrcode.image.svg
+from push_service import send_generic_push
 from werkzeug.security import check_password_hash, generate_password_hash
 
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -470,15 +471,69 @@ def send_message(pid, kind, to_label, body, link="", phone="", inbox_body=None):
 
 
 def create_notification(recipient_type, recipient_id, title, body, profile_id=None):
-    """Persist a notification for an authenticated patient or professional."""
+    """Persist a notification and submit a generic push to active subscriptions."""
     if recipient_type not in ("patient", "professional"):
         raise ValueError("Unsupported notification recipient type")
-    db().execute(
+
+    conn = db()
+    cur = conn.execute(
         "INSERT INTO notifications "
         "(recipient_type, recipient_id, profile_id, title, body, created_at) "
         "VALUES (?,?,?,?,?,?)",
         (recipient_type, recipient_id, profile_id, title[:120], body[:500], iso()))
-    db().commit()
+    notification_id = cur.lastrowid
+    conn.commit()
+
+    subscriptions = conn.execute(
+        "SELECT id, endpoint, p256dh, auth FROM push_subscriptions "
+        "WHERE recipient_type=? AND recipient_id=? AND disabled_at IS NULL",
+        (recipient_type, recipient_id)).fetchall()
+
+    if not subscriptions:
+        conn.execute(
+            "UPDATE notifications SET push_status='unavailable' WHERE id=?",
+            (notification_id,))
+        conn.commit()
+        return notification_id
+
+    notification_path = (f"/notifications?pid={recipient_id}"
+                         if recipient_type == "patient" else "/notifications")
+    outcomes = []
+    for subscription in subscriptions:
+        subscription_info = {
+            "endpoint": dec(subscription["endpoint"]),
+            "keys": {
+                "p256dh": dec(subscription["p256dh"]),
+                "auth": dec(subscription["auth"]),
+            },
+        }
+        outcome = send_generic_push(subscription_info, notification_path)
+        outcomes.append(outcome)
+        if outcome == "unavailable":
+            # Expired/revoked browser subscriptions should not be retried.
+            # Missing VAPID configuration also returns unavailable; do not
+            # disable a valid subscription in that case.
+            if os.environ.get("HEALTHTAG_VAPID_PUBLIC_KEY", "").strip() and os.environ.get(
+                    "HEALTHTAG_VAPID_PRIVATE_KEY", "").strip() and os.environ.get(
+                    "HEALTHTAG_VAPID_SUBJECT", "").strip():
+                conn.execute(
+                    "UPDATE push_subscriptions SET disabled_at=?, updated_at=? WHERE id=?",
+                    (iso(), iso(), subscription["id"]))
+
+    if "accepted" in outcomes:
+        status = "accepted"
+        submitted_at = iso()
+    elif "failed" in outcomes:
+        status = "failed"
+        submitted_at = None
+    else:
+        status = "unavailable"
+        submitted_at = None
+    conn.execute(
+        "UPDATE notifications SET push_status=?, push_submitted_at=? WHERE id=?",
+        (status, submitted_at, notification_id))
+    conn.commit()
+    return notification_id
 
 
 def notify_owner(pid, body):
