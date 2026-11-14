@@ -187,6 +187,35 @@ CREATE TABLE IF NOT EXISTS messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT, profile_id TEXT,
     kind TEXT, to_label TEXT, body TEXT, link TEXT
 );
+CREATE TABLE IF NOT EXISTS notifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    recipient_type TEXT NOT NULL CHECK (recipient_type IN ('patient', 'professional')),
+    recipient_id TEXT NOT NULL,
+    profile_id TEXT,
+    title TEXT NOT NULL,
+    body TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    push_status TEXT NOT NULL DEFAULT 'not_queued'
+        CHECK (push_status IN ('not_queued', 'queued', 'accepted', 'failed', 'unavailable')),
+    push_submitted_at TEXT,
+    read_at TEXT
+);
+CREATE INDEX IF NOT EXISTS notifications_recipient
+    ON notifications (recipient_type, recipient_id, id DESC);
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    recipient_type TEXT NOT NULL CHECK (recipient_type IN ('patient', 'professional')),
+    recipient_id TEXT NOT NULL,
+    endpoint TEXT NOT NULL UNIQUE,
+    endpoint_hash TEXT,
+    p256dh TEXT NOT NULL,
+    auth TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    disabled_at TEXT
+);
+CREATE INDEX IF NOT EXISTS push_subscriptions_recipient
+    ON push_subscriptions (recipient_type, recipient_id, disabled_at);
 CREATE TABLE IF NOT EXISTS requests (
     id TEXT PRIMARY KEY, profile_id TEXT, ts TEXT, status TEXT, otp TEXT,
     attempts INTEGER DEFAULT 0, requester_cred TEXT, requester_name TEXT, requester_org TEXT,
@@ -226,6 +255,10 @@ def otp_hash(rid, otp):
 def _migrate(conn):
     """Bring a database from an older version up to date."""
     cols = {row[1] for row in conn.execute("PRAGMA table_info(requests)")}
+    subscription_cols = {row[1] for row in conn.execute("PRAGMA table_info(push_subscriptions)")}
+    if "endpoint_hash" not in subscription_cols:
+        conn.execute("ALTER TABLE push_subscriptions ADD COLUMN endpoint_hash TEXT")
+    conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS push_subscriptions_endpoint_hash ON push_subscriptions (endpoint_hash)")
     if "approve_hash" not in cols:
         conn.execute("ALTER TABLE requests ADD COLUMN approve_hash TEXT")
     # Pending requests from before this change have plain-text OTPs and guessable approval links: end them.
@@ -451,6 +484,89 @@ def require_pro():
 
 def actor_label(pro):
     return f"{pro['name']}, {pro['org']}"
+
+
+def _same_origin_mutation():
+    """Reject cross-origin subscription changes; JSON requests also avoid simple-form CSRF."""
+    origin = request.headers.get("Origin")
+    if origin:
+        from urllib.parse import urlsplit
+        parsed = urlsplit(origin)
+        if parsed.netloc.lower() != request.host.lower():
+            abort(403)
+
+
+def _subscription_payload():
+    if not request.is_json:
+        abort(415)
+    _same_origin_mutation()
+    data = request.get_json(silent=True) or {}
+    endpoint = data.get("endpoint", "")
+    keys = data.get("keys") or {}
+    p256dh = keys.get("p256dh", "")
+    auth = keys.get("auth", "")
+    if (not isinstance(endpoint, str) or len(endpoint) > 2048
+            or not endpoint.startswith("https://")
+            or not isinstance(p256dh, str) or not re.fullmatch(r"[A-Za-z0-9_=-]{20,256}", p256dh)
+            or not isinstance(auth, str) or not re.fullmatch(r"[A-Za-z0-9_=-]{8,128}", auth)):
+        abort(400)
+    return endpoint, p256dh, auth
+
+
+def _save_push_subscription(recipient_type, recipient_id):
+    endpoint, p256dh, auth = _subscription_payload()
+    now = iso()
+    endpoint_hash = sha256_hex(endpoint)
+    db().execute(
+        "INSERT INTO push_subscriptions "
+        "(recipient_type, recipient_id, endpoint, endpoint_hash, p256dh, auth, created_at, updated_at, disabled_at) "
+        "VALUES (?,?,?,?,?,?,?,?,NULL) "
+        "ON CONFLICT(endpoint) DO UPDATE SET recipient_type=excluded.recipient_type, "
+        "recipient_id=excluded.recipient_id, endpoint=excluded.endpoint, endpoint_hash=excluded.endpoint_hash, "
+        "p256dh=excluded.p256dh, auth=excluded.auth, updated_at=excluded.updated_at, disabled_at=NULL",
+        (recipient_type, recipient_id, enc(endpoint), endpoint_hash, enc(p256dh), enc(auth), now, now))
+    db().commit()
+    return jsonify(ok=True)
+
+
+def _remove_push_subscription(recipient_type, recipient_id):
+    if not request.is_json:
+        abort(415)
+    _same_origin_mutation()
+    data = request.get_json(silent=True) or {}
+    endpoint = data.get("endpoint", "")
+    if not isinstance(endpoint, str) or not endpoint.startswith("https://") or len(endpoint) > 2048:
+        abort(400)
+    db().execute(
+        "UPDATE push_subscriptions SET disabled_at=?, updated_at=? "
+        "WHERE recipient_type=? AND recipient_id=? AND endpoint_hash=?",
+        (iso(), iso(), recipient_type, recipient_id, sha256_hex(endpoint)))
+    db().commit()
+    return jsonify(ok=True)
+
+
+@app.post("/push/subscribe/patient/<pid>")
+def push_subscribe_patient(pid):
+    owner_profile(pid)
+    return _save_push_subscription("patient", pid)
+
+
+@app.delete("/push/subscribe/patient/<pid>")
+def push_unsubscribe_patient(pid):
+    owner_profile(pid)
+    return _remove_push_subscription("patient", pid)
+
+
+@app.post("/push/subscribe/professional")
+def push_subscribe_professional():
+    pro = require_pro()
+    return _save_push_subscription("professional", pro["cred"])
+
+
+@app.delete("/push/subscribe/professional")
+def push_unsubscribe_professional():
+    pro = require_pro()
+    return _remove_push_subscription("professional", pro["cred"])
 
 
 # ---- access requests
