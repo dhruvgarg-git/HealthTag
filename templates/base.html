@@ -41,7 +41,7 @@
   // Permission is requested only after an explicit user action.
   if ("serviceWorker" in navigator && window.isSecureContext) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("{{ url_for('static', filename='sw.js') }}")
+      navigator.serviceWorker.register("{{ url_for('service_worker') }}", { scope: "/" })
         .catch((error) => console.warn("HealthTag service worker registration failed:", error));
     });
   }
