@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}HealthTag{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
   {% block head %}{% endblock %}
 </head>
 <body>
@@ -97,7 +98,7 @@
           if (subscription) {
             const response = await fetch(endpoint, {
               method: "DELETE",
-              headers: { "Content-Type": "application/json" },
+              headers: { "Content-Type": "application/json", "X-CSRFToken": document.querySelector('meta[name=csrf-token]').content },
               credentials: "same-origin",
               body: JSON.stringify({ endpoint: subscription.endpoint })
             });
@@ -119,7 +120,7 @@
             });
             const response = await fetch(endpoint, {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
+              headers: { "Content-Type": "application/json", "X-CSRFToken": document.querySelector('meta[name=csrf-token]').content },
               credentials: "same-origin",
               body: JSON.stringify(subscription.toJSON())
             });
