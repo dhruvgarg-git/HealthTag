@@ -8,6 +8,7 @@
     <p><b>{{ r.requester_name }}</b> from <b>{{ r.requester_org }}</b> is asking to open the full history: past conditions, notes and hospital records.</p>
     <p class="fine">If you approve, they can see it for 30 minutes. {{ p.name }} is told who asked and who approved. If you don't know why they are asking, deny.</p>
     <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="actions">
         <button class="btn teal" name="decision" value="approve" type="submit">Approve access</button>
         <button class="btn ghost" name="decision" value="deny" type="submit">Deny</button>
