@@ -17,6 +17,7 @@
     <nav>
       <a href="{{ url_for('inbox') }}">Demo inbox</a>
       {% if pro %}
+        <a href="{{ url_for('notifications') }}">Notifications</a>
         <span class="who">{{ pro.name }}</span>
         <a href="{{ url_for('pro_logout') }}">Sign out</a>
       {% else %}
