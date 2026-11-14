@@ -40,6 +40,7 @@ LOGIN_PAGE = """{% extends "base.html" %}
 <h1>Owner login</h1>
 <p class="muted">Sign in with your mobile number and the private code shown when you created your HealthTag.</p>
 <form method="post" class="panel">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <div class="row"><label for="phone">Your mobile number</label>
     <input id="phone" name="phone" type="tel" inputmode="numeric" autocomplete="tel" required></div>
   <div class="row"><label for="code">Private code</label>
@@ -62,6 +63,7 @@ LINK_PAGE = """{% extends "base.html" %}
 </div>
 {% endif %}
 <form method="post" class="panel">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <div class="row"><label for="phone">Your own mobile number</label>
     <input id="phone" name="phone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="98XXXXXXXX" required>
     <p class="help">You will log in with this number and your private code. This is not your emergency contact's number.</p></div>
