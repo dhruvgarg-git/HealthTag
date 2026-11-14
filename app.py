@@ -430,7 +430,7 @@ def send_message(pid, kind, to_label, body, link="", phone="", inbox_body=None):
         ok, info = send_sms(phone, sms_text)
         to_label += " · SMS sent" if ok else f" · SMS not sent ({info})"
     db().execute("INSERT INTO messages (ts, profile_id, kind, to_label, body, link) VALUES (?,?,?,?,?,?)",
-                 (iso(), pid, kind, to_label, inbox_body if inbox_body is not None else body, ""))
+                 (iso(), pid, kind, to_label, inbox_body if inbox_body is not None else body, link if DEMO_MODE else ""))
     db().commit()
 
 
@@ -755,7 +755,7 @@ def request_full_history(pid):
              f"HealthTag: {actor} wants {p['name']}'s history. Code: {otp}. Approve/deny:",
              link=f"{BASE_URL}/approve/{token}",
              phone=p["contact_phone"],
-             inbox_body=f"HealthTag: {actor} wants {p['name']}'s history. Approve/deny:")
+             inbox_body=f"HealthTag: {actor} wants {p['name']}'s history. The approval link has been sent to {p['contact_name']}")
     notify_owner(pid, f"{actor} requested your full history. Waiting for {p['contact_name']} to approve.")
     return redirect(url_for("request_wait", rid=rid))
 
