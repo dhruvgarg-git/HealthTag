@@ -38,13 +38,102 @@
 </footer>
 <script>
   // Register the HealthTag push worker without requesting notification permission.
-  // Permission will be requested only after the user explicitly enables notifications.
+  // Permission is requested only after an explicit user action.
   if ("serviceWorker" in navigator && window.isSecureContext) {
     window.addEventListener("load", () => {
       navigator.serviceWorker.register("{{ url_for('static', filename='sw.js') }}")
         .catch((error) => console.warn("HealthTag service worker registration failed:", error));
     });
   }
+
+  function healthTagDecodeVapidKey(value) {
+    const padding = "=".repeat((4 - value.length % 4) % 4);
+    const base64 = (value + padding).replace(/-/g, "+").replace(/_/g, "/");
+    const raw = window.atob(base64);
+    return Uint8Array.from(raw, (character) => character.charCodeAt(0));
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll("[data-push-control]").forEach((panel) => {
+      const button = panel.querySelector("[data-push-toggle]");
+      const status = panel.querySelector("[data-push-status]");
+      const publicKey = panel.dataset.vapidPublicKey;
+      const endpoint = panel.dataset.pushEndpoint;
+
+      const setStatus = (message) => { status.textContent = message; };
+      const setButton = (enabled) => {
+        button.textContent = enabled ? "Turn off browser notifications" : "Enable browser notifications";
+      };
+
+      if (!("serviceWorker" in navigator) || !("PushManager" in window) || !window.isSecureContext) {
+        button.disabled = true;
+        setStatus("Browser push requires a supported browser and a secure HTTPS connection.");
+        return;
+      }
+      if (!publicKey) {
+        button.disabled = true;
+        setStatus("Browser notifications are not configured on this HealthTag server yet.");
+        return;
+      }
+
+      const getRegistration = () => navigator.serviceWorker.ready;
+      getRegistration().then(async (registration) => {
+        const subscription = await registration.pushManager.getSubscription();
+        setButton(Boolean(subscription));
+        setStatus(subscription ? "Browser notifications are enabled on this device." :
+          (Notification.permission === "denied" ? "Permission is blocked in your browser settings." :
+          "Browser notifications are currently off."));
+      }).catch(() => setStatus("Could not check browser notification settings."));
+
+      button.addEventListener("click", async () => {
+        button.disabled = true;
+        try {
+          const registration = await getRegistration();
+          let subscription = await registration.pushManager.getSubscription();
+          if (subscription) {
+            const response = await fetch(endpoint, {
+              method: "DELETE",
+              headers: { "Content-Type": "application/json" },
+              credentials: "same-origin",
+              body: JSON.stringify({ endpoint: subscription.endpoint })
+            });
+            if (!response.ok) throw new Error("Could not update notification settings.");
+            await subscription.unsubscribe();
+            setButton(false);
+            setStatus("Browser notifications are off on this device.");
+          } else {
+            const permission = await Notification.requestPermission();
+            if (permission !== "granted") {
+              setStatus(permission === "denied" ?
+                "Permission was denied. Change it in your browser's site settings to enable notifications." :
+                "Notification permission was not granted.");
+              return;
+            }
+            subscription = await registration.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: healthTagDecodeVapidKey(publicKey)
+            });
+            const response = await fetch(endpoint, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "same-origin",
+              body: JSON.stringify(subscription.toJSON())
+            });
+            if (!response.ok) {
+              await subscription.unsubscribe();
+              throw new Error("HealthTag could not save this device's subscription.");
+            }
+            setButton(true);
+            setStatus("Browser notifications are enabled on this device.");
+          }
+        } catch (error) {
+          setStatus(error.message || "Could not update browser notification settings.");
+        } finally {
+          button.disabled = false;
+        }
+      });
+    });
+  });
 </script>
 </body>
 </html>
