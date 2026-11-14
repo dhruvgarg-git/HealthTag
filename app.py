@@ -792,6 +792,15 @@ def home():
     return render_template("home.html", demo_id=DEMO_PROFILE_ID, demo_key=DEMO_OWNER_KEY)
 
 
+@app.get("/sw.js")
+def service_worker():
+    """Serve the push worker from the origin root so it can control all app pages."""
+    response = send_file(os.path.join(APP_DIR, "static", "sw.js"),
+                         mimetype="application/javascript")
+    response.headers["Cache-Control"] = "no-cache"
+    return response
+
+
 def read_profile_form():
     limits = {"history": 2000}
     data = {f: request.form.get(f, "").strip()[:limits.get(f, 300)] for f in TEXT_FIELDS}
