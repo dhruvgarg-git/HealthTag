@@ -77,6 +77,7 @@
   <h2>Add a note to the record</h2>
   <p class="muted">Treatment notes are saved to this person's record. They see them in their activity log.</p>
   <form method="post" action="{{ url_for('add_record', pid=p.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="row"><label for="note">Note</label>
       <textarea id="note" name="note" maxlength="1000" required placeholder="e.g. Admitted after road accident. Given IV fluids. Blood sugar 68 mg/dL on arrival."></textarea></div>
     <button class="btn" type="submit">Save note</button>
