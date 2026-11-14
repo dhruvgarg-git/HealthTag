@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Notifications · HealthTag{% endblock %}
+{% block wrapclass %}wide{% endblock %}
+{% block content %}
+<div class="card-head">
+  <div>
+    <h1 style="margin:0">Notifications</h1>
+    <p class="muted" style="margin:0">
+      {% if recipient_type == "professional" %}
+        Updates for your verified professional account.
+      {% else %}
+        Updates about activity on your HealthTag profile.
+      {% endif %}
+    </p>
+  </div>
+  {% if unread %}
+  <form method="post" action="{{ url_for('notifications_read_all', pid=pid) if pid else url_for('notifications_read_all') }}">
+    <button class="btn ghost" type="submit">Mark all as read</button>
+  </form>
+  {% endif %}
+</div>
+
+{% if notifications %}
+  {% for n in notifications %}
+  <article class="msg {% if not n.read_at %}notification-unread{% endif %}">
+    <div class="card-head" style="margin-bottom:6px">
+      <b>{{ n.title }}</b>
+      <span class="pill {% if n.read_at %}t0{% else %}t1{% endif %}">{{ "Read" if n.read_at else "Unread" }}</span>
+    </div>
+    <p>{{ n.body }}</p>
+    <div class="meta">{{ n.created_at|ist }}</div>
+  </article>
+  {% endfor %}
+{% else %}
+  <section class="panel">
+    <p class="muted">You're all caught up. New account activity will appear here.</p>
+  </section>
+{% endif %}
+{% endblock %}
