@@ -21,6 +21,7 @@ Environment:
 import hashlib
 import io
 import logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 from flask import send_file
 import hmac
 import io
