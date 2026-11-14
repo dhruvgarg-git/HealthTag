@@ -68,6 +68,7 @@
   <h2>Full history is locked</h2>
   <p class="muted">Past conditions, notes and hospital records need approval from {{ p.contact_name }}, the emergency contact. They receive a code and an approval link.</p>
   <form method="post" action="{{ url_for('request_full_history', pid=p.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <button class="btn teal block" type="submit">Request full history</button>
   </form>
 </section>
