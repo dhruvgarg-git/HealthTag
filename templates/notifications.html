@@ -15,6 +15,7 @@
   </div>
   {% if unread %}
   <form method="post" action="{{ url_for('notifications_read_all', pid=pid) if pid else url_for('notifications_read_all') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <button class="btn ghost" type="submit">Mark all as read</button>
   </form>
   {% endif %}
