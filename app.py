@@ -126,6 +126,7 @@ app.config.update(
     PERMANENT_SESSION_LIFETIME=timedelta(hours=8),    # responder and owner sign-ins expire
 )
 from flask_wtf import CSRFProtect
+from flask_wtf.csrf import CSRFError
 csrf = CSRFProtect(app)
 if os.environ.get("HEALTHTAG_TRUST_PROXY") == "1":
     from werkzeug.middleware.proxy_fix import ProxyFix
