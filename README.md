@@ -46,7 +46,7 @@ HealthTag is hosted on Render, so you can access the deployed application withou
 1. Open the HealthTag application and scan its QR code. The public view displays only the emergency helpline and contact number.
 2. Select **Verify and open the medical card** and sign in using a demo account:
    - **Doctor:** `H-1001 / 1234` — Dr. Anita Verma, Apollo Hospital.
-   - **Paramedic:** `A-2002 / 1234`.
+   - **Paramedic:** `A-2002 / 1234` —  Ravi Kumar, 108 Ambulance Service
 3. Select **Request full history** to request access to the complete medical history.
 4. Open the approval link or use the verification code delivered through the configured SMS workflow.
 5. Approve the request to unlock full-history access for the permitted duration.
