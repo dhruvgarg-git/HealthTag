@@ -41,6 +41,13 @@
     <textarea id="history" name="history" maxlength="2000">{{ form.history }}</textarea>
     <p class="help">Shown only after your emergency contact approves.</p></div>
 
+  {% if not editing %}
+  <div class="row">
+    <label><input type="checkbox" name="consent" value="1" required>
+    I agree to my health details being stored as described on the <a href="{{ url_for('privacy') }}">privacy page</a>, and I have told my emergency contact.</label>
+  </div>
+  {% endif %}
+  
   <button class="btn coral block" type="submit">{{ 'Save changes' if editing else 'Create my HealthTag' }}</button>
 </form>
 {% endblock %}
