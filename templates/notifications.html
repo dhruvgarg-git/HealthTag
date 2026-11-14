@@ -20,6 +20,17 @@
   {% endif %}
 </div>
 
+<section class="panel" data-push-control
+  data-vapid-public-key="{{ VAPID_PUBLIC_KEY }}"
+  data-push-endpoint="{{ url_for('push_subscribe_professional') if recipient_type == 'professional' else url_for('push_subscribe_patient', pid=pid) }}">
+  <h2>Browser notifications</h2>
+  <p class="muted">Choose whether this device can show HealthTag notifications. Permission is requested only when you press the button. This setting applies to this browser and device.</p>
+  <button class="btn teal" type="button" data-push-toggle>Enable browser notifications</button>
+  <p class="fine" role="status" aria-live="polite" data-push-status>
+    Checking browser notification settings…
+  </p>
+</section>
+
 {% if notifications %}
   {% for n in notifications %}
   <article class="msg {% if not n.read_at %}notification-unread{% endif %}">
