@@ -20,6 +20,7 @@ Environment:
 """
 import hashlib
 import io
+import logging
 from flask import send_file
 import hmac
 import io
@@ -39,6 +40,8 @@ import qrcode
 import qrcode.image.svg
 from push_service import send_generic_push
 from werkzeug.security import check_password_hash, generate_password_hash
+
+logger = logging.getLogger(__name__)
 
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 DEMO_MODE = os.environ.get("HEALTHTAG_DEMO", "0") == "1"
@@ -490,6 +493,7 @@ def create_notification(recipient_type, recipient_id, title, body, profile_id=No
         (recipient_type, recipient_id)).fetchall()
 
     if not subscriptions:
+        logger.warning("Web Push skipped: no active subscriptions for recipient type=%s", recipient_type)
         conn.execute(
             "UPDATE notifications SET push_status='unavailable' WHERE id=?",
             (notification_id,))
@@ -520,6 +524,8 @@ def create_notification(recipient_type, recipient_id, title, body, profile_id=No
                     "UPDATE push_subscriptions SET disabled_at=?, updated_at=? WHERE id=?",
                     (iso(), iso(), subscription["id"]))
 
+    logger.info("Web Push delivery attempts completed: recipient_type=%s subscriptions=%s outcomes=%s",
+                recipient_type, len(subscriptions), ",".join(outcomes))
     if "accepted" in outcomes:
         status = "accepted"
         submitted_at = iso()
@@ -601,6 +607,7 @@ def _save_push_subscription(recipient_type, recipient_id):
         "p256dh=excluded.p256dh, auth=excluded.auth, updated_at=excluded.updated_at, disabled_at=NULL",
         (recipient_type, recipient_id, enc(endpoint), endpoint_hash, enc(p256dh), enc(auth), now, now))
     db().commit()
+    logger.info("Web Push subscription saved for recipient type=%s", recipient_type)
     return jsonify(ok=True)
 
 
