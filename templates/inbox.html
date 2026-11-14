@@ -3,7 +3,7 @@
 {% block head %}<meta http-equiv="refresh" content="4">{% endblock %}
 {% block content %}
 <h1>Demo inbox</h1>
-<p class="muted">In the live system these go out as SMS or WhatsApp messages and app notifications. For the demo they land here. This page refreshes on its own.</p>
+<p class="muted">The code and the link goes out as an SMS to the emergency contact. This page refreshes on its own.</p>
 
 {% for m in messages %}
 <article class="msg {{ m.kind }}">
