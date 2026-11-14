@@ -125,6 +125,8 @@ app.config.update(
     SESSION_COOKIE_SECURE=BASE_URL.startswith("https://"),
     PERMANENT_SESSION_LIFETIME=timedelta(hours=8),    # responder and owner sign-ins expire
 )
+from flask_wtf import CSRFProtect
+csrf = CSRFProtect(app)
 if os.environ.get("HEALTHTAG_TRUST_PROXY") == "1":
     from werkzeug.middleware.proxy_fix import ProxyFix
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
