@@ -1,0 +1,7 @@
+Flask>=3.0
+reportlab>=4.0        # generates the QR codes
+cryptography>=42      # optional: encrypts medical fields in the database
+gunicorn>=22.0
+requests>=2.31
+qrcode[pil]>=7.4
+Pillow>=10.0
