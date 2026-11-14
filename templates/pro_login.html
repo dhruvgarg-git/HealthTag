@@ -4,6 +4,7 @@
 <h1>Doctor or paramedic sign-in</h1>
 <p class="muted">Only verified hospital and ambulance staff can open the medical card. Your ID is recorded on every scan.</p>
 <form method="post" class="panel">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <input type="hidden" name="next" value="{{ nxt }}">
   <div class="row"><label for="cred">Professional ID</label>
     <input id="cred" name="cred" type="text" autocomplete="username" autocapitalize="characters" required></div>
