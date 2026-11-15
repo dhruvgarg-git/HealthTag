@@ -27,7 +27,11 @@
         <span class="who">{{ pro.name }}</span>
         <a href="{{ url_for('pro_logout') }}">Sign out</a>
       {% endif %}
-      <a href="{{ url_for('inbox') }}">Notifications</a>
+      {% if pro %}
+        <a href="{{ url_for('notifications') }}">Notifications</a>
+      {% elif session.get('owner') %}
+        <a href="{{ url_for('notifications', pid=(session.get('owner').keys()|list|last)) }}">Notifications</a>
+      {% endif %}
     </nav>
   </div>
 </header>
