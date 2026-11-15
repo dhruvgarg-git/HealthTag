@@ -30,7 +30,7 @@
     <a class="btn ghost" href="{{ url_for('scan', pid=demo_id) }}">Scan as a bystander</a>
     <a class="btn ghost" href="{{ url_for('owner', pid=demo_id, k=demo_key) }}">Owner dashboard</a>
     <a class="btn ghost" href="{{ url_for('card', pid=demo_id, k=demo_key) }}">Printable card</a>
-    <a class="btn ghost" href="{{ url_for('inbox') }}">Notifications</a>
+    {% if DEMO_MODE %}<a class="btn ghost" href="{{ url_for('inbox') }}">Demo SMS inbox</a>{% endif %}
   </div>
 </section>
 {% endblock %}
