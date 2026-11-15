@@ -548,8 +548,6 @@ def create_notification(recipient_type, recipient_id, title, body, profile_id=No
 
 def notify_owner(pid, body):
     create_notification("patient", pid, "HealthTag account activity", body, profile_id=pid)
-    # Keep the legacy activity feed populated during the transition.
-    send_message(pid, "owner", "Owner (HealthTag app)", body)
 
 
 def notify_professional(cred, title, body, profile_id=None):
