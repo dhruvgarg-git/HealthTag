@@ -25,6 +25,9 @@
   <a class="btn teal" href="{{ url_for('owner', pid=p.id, k=k) }}">
     ⚙️ Open Dashboard
   </a>
+  <a class="btn" href="{{ url_for('notifications', pid=p.id) }}">
+    🔔 Turn on alerts
+  </a>
   <a class="btn" 
      href="{{ url_for('qr_png', pid=p.id, download=1) }}" 
      download="HealthTag_{{ p.id }}.png">
