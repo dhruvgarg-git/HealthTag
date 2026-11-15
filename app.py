@@ -900,8 +900,9 @@ def owner_rotate_key(pid):
 def owner(pid):
     p = owner_profile(pid)
     events = db().execute("SELECT * FROM events WHERE profile_id=? ORDER BY id DESC LIMIT 60", (pid,)).fetchall()
-    notes = db().execute("SELECT * FROM messages WHERE profile_id=? AND kind='owner' ORDER BY id DESC LIMIT 30",
-                         (pid,)).fetchall()
+    notes = db().execute(
+      "SELECT body, created_at AS ts FROM notifications "
+      "WHERE recipient_type='patient' AND recipient_id=? ORDER BY id DESC LIMIT 30", (pid,)).fetchall()
     records = db().execute("SELECT * FROM records WHERE profile_id=? ORDER BY id DESC", (pid,)).fetchall()
     records = [dict(r, note=dec(r["note"])) for r in records]
     return render_template("owner.html", p=p, events=events, notes=notes, records=records)
