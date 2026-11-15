@@ -124,6 +124,7 @@ app.config.update(
     SESSION_COOKIE_SAMESITE="Lax",                    # blocks cross-site form posts (CSRF) until real tokens are added
     SESSION_COOKIE_SECURE=BASE_URL.startswith("https://"),
     PERMANENT_SESSION_LIFETIME=timedelta(hours=8),    # responder and owner sign-ins expire
+    WTF_CSRF_SSL_STRICT=False,                        # we send Referrer-Policy: no-referrer, so browsers send no Referer to check
 )
 from flask_wtf import CSRFProtect
 from flask_wtf.csrf import CSRFError
@@ -1209,9 +1210,12 @@ def inbox_clear():
 
 # --------------------------------------------------------------------------- errors
 @app.errorhandler(CSRFError)
-def csrf_failed(_e):
+def csrf_failed(e):
+    logger.warning("CSRF check failed: %s (path=%s)", e.description, request.path)
     return render_template("error.html", title="Session expired",
-                           text="Please go back, refresh the page and try again."), 400
+                           text=f"Please go back, refresh the page and try again. ({e.description})"), 400
+
+
 @app.errorhandler(403)
 def forbidden(_e):
     return render_template("error.html", title="Access denied",
