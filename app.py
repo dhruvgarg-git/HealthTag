@@ -837,7 +837,7 @@ def read_profile_form():
     phone = clean_indian_mobile(data["contact_phone"])
     if not phone:
         errors.append("Enter a valid 10-digit Indian mobile number (starts with 6, 7, 8 or 9).")
-    phone = data["contact_phone"]      # keep what they typed so the form refills
+        phone = data["contact_phone"]      # keep what they typed so the form refills
     data["contact_phone"] = phone
     return data, errors
 
