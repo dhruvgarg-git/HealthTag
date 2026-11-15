@@ -23,7 +23,7 @@ self.addEventListener("push", (event) => {
     body,
     tag: typeof payload.tag === "string" ? payload.tag.slice(0, 100) : "healthtag-update",
     data: { path: typeof payload.path === "string" ? payload.path : "/notifications" },
-    renotify: false
+    renotify: true
   };
 
   event.waitUntil(self.registration.showNotification(title, options));
