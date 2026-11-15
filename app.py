@@ -834,7 +834,7 @@ def read_profile_form():
         errors.append("Choose a blood group, or 'Not sure'.")
     if not data["contact_name"]:
         errors.append("Enter the emergency contact's name.")
-        phone = clean_indian_mobile(data["contact_phone"])
+    phone = clean_indian_mobile(data["contact_phone"])
     if not phone:
         errors.append("Enter a valid 10-digit Indian mobile number (starts with 6, 7, 8 or 9).")
     phone = data["contact_phone"]      # keep what they typed so the form refills
